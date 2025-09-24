@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Leaders Card Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298, #7b4397, #dc2430);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            padding: 15px 20px;
+            border-radius: 10px;
+            text-align: center;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .game-area {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .player-area, .ai-area {
+            background: rgba(0,0,0,0.4);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .battle-area {
+            background: rgba(0,0,0,0.5);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .leader-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border-radius: 12px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            backdrop-filter: blur(5px);
+        }
+
+        .leader-card:hover {
+            transform: translateY(-5px);
+            border-color: #4ecdc4;
+            box-shadow: 0 10px 25px rgba(78, 205, 196, 0.3);
+        }
+
+        .leader-card.selected {
+            border-color: #ff6b6b;
+            background: linear-gradient(145deg, rgba(255, 107, 107, 0.2), rgba(255, 107, 107, 0.1));
+        }
+
+        .leader-card.ai-card {
+            background: linear-gradient(145deg, rgba(220, 36, 48, 0.2), rgba(220, 36, 48, 0.1));
+        }
+
+        .leader-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+            color: #4ecdc4;
+        }
+
+        .leader-country {
+            font-size: 0.9rem;
+            color: #ccc;
+            margin-bottom: 8px;
+        }
+
+        .leader-quadrant {
+            font-size: 0.8rem;
+            padding: 3px 8px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .auth-left { background: #dc2626; }
+        .auth-right { background: #2563eb; }
+        .lib-left { background: #059669; }
+        .lib-right { background: #7c2d12; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            font-size: 0.8rem;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .special-ability {
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: #ffd700;
+        }
+
+        .battle-controls {
+            margin: 20px 0;
+        }
+
+        .btn {
+            background: linear-gradient(145deg, #4ecdc4, #44a08d);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(78, 205, 196, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(145deg, #ff6b6b, #ee5a24);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .battle-result {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .victory {
+            background: linear-gradient(145deg, rgba(16, 185, 129, 0.3), rgba(5, 150, 105, 0.3));
+            border: 2px solid #10b981;
+        }
+
+        .defeat {
+            background: linear-gradient(145deg, rgba(239, 68, 68, 0.3), rgba(220, 38, 38, 0.3));
+            border: 2px solid #ef4444;
+        }
+
+        .deck-selection {
+            background: rgba(0,0,0,0.4);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .political-compass {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 20px;
+            height: 70vh;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .compass-quadrant {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 15px;
+            backdrop-filter: blur(5px);
+            border: 2px solid rgba(255,255,255,0.2);
+            overflow-y: auto;
+        }
+
+        .compass-quadrant.auth-left {
+            border-color: #dc2626;
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(220, 38, 38, 0.05));
+        }
+
+        .compass-quadrant.auth-right {
+            border-color: #2563eb;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(37, 99, 235, 0.05));
+        }
+
+        .compass-quadrant.lib-left {
+            border-color: #059669;
+            background: linear-gradient(135deg, rgba(5, 150, 105, 0.1), rgba(5, 150, 105, 0.05));
+        }
+
+        .compass-quadrant.lib-right {
+            border-color: #7c2d12;
+            background: linear-gradient(135deg, rgba(124, 45, 18, 0.1), rgba(124, 45, 18, 0.05));
+        }
+
+        .quadrant-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 8px;
+            border-radius: 8px;
+            color: white;
+        }
+
+        .quadrant-title.auth-left {
+            background: #dc2626;
+        }
+
+        .quadrant-title.auth-right {
+            background: #2563eb;
+        }
+
+        .quadrant-title.lib-left {
+            background: #059669;
+        }
+
+        .quadrant-title.lib-right {
+            background: #7c2d12;
+        }
+
+        .compass-axes {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .axis-line {
+            position: absolute;
+            background: rgba(255,255,255,0.3);
+        }
+
+        .axis-horizontal {
+            width: calc(100% + 40px);
+            height: 2px;
+            left: -20px;
+            top: -1px;
+        }
+
+        .axis-vertical {
+            height: calc(100% + 40px);
+            width: 2px;
+            top: -20px;
+            left: -1px;
+        }
+
+        .axis-label {
+            position: absolute;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .axis-label.top {
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .axis-label.bottom {
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .axis-label.left {
+            left: -80px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .axis-label.right {
+            right: -80px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .leader-card.compass-card {
+            margin: 8px 0;
+            font-size: 0.85rem;
+        }
+
+        .leader-card.compass-card .leader-name {
+            font-size: 1rem;
+        }
+
+        .leader-card.compass-card .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .selection-counter {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.1rem;
+            color: #4ecdc4;
+        }
+
+        .turn-indicator {
+            text-align: center;
+            font-size: 1.3rem;
+            margin: 20px 0;
+            padding: 15px;
+            background: linear-gradient(145deg, rgba(255,215,0,0.2), rgba(255,193,7,0.2));
+            border-radius: 10px;
+            border: 2px solid #ffd700;
+        }
+
+        .game-phase {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #4ecdc4;
+        }
+
+        @media (max-width: 1024px) {
+            .game-area {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+            }
+            
+            .game-stats {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2rem;
+            color: #4ecdc4;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>World Leaders Card Game</h1>
+            <p>Choose your leaders and dominate the world stage!</p>
+        </div>
+
+        <div id="gameStats" class="game-stats">
+            <div class="stat-card">
+                <div>Round</div>
+                <div id="currentRound">1</div>
+            </div>
+            <div class="stat-card">
+                <div>Player Score</div>
+                <div id="playerScore">0</div>
+            </div>
+            <div class="stat-card">
+                <div>AI Score</div>
+                <div id="aiScore">0</div>
+            </div>
+            <div class="stat-card">
+                <div>Cards Left</div>
+                <div id="cardsLeft">5</div>
+            </div>
+        </div>
+
+        <div id="gamePhase" class="game-phase">Select Your Deck</div>
+
+        <div id="deckSelection" class="deck-selection">
+            <h3>Choose 5 Leaders for Your Deck:</h3>
+            <div class="selection-counter">
+                <span id="selectionCount">0</span> / 5 leaders selected
+            </div>
+            <div class="political-compass">
+                <div class="compass-axes">
+                    <div class="axis-line axis-horizontal"></div>
+                    <div class="axis-line axis-vertical"></div>
+                    <div class="axis-label top">AUTHORITARIAN</div>
+                    <div class="axis-label bottom">LIBERTARIAN</div>
+                    <div class="axis-label left">LEFT</div>
+                    <div class="axis-label right">RIGHT</div>
+                </div>
+                
+                <div class="compass-quadrant auth-left" id="authLeftQuadrant">
+                    <div class="quadrant-title auth-left">Authoritarian Left</div>
+                    <div class="quadrant-leaders"></div>
+                </div>
+                
+                <div class="compass-quadrant auth-right" id="authRightQuadrant">
+                    <div class="quadrant-title auth-right">Authoritarian Right</div>
+                    <div class="quadrant-leaders"></div>
+                </div>
+                
+                <div class="compass-quadrant lib-left" id="libLeftQuadrant">
+                    <div class="quadrant-title lib-left">Libertarian Left</div>
+                    <div class="quadrant-leaders"></div>
+                </div>
+                
+                <div class="compass-quadrant lib-right" id="libRightQuadrant">
+                    <div class="quadrant-title lib-right">Libertarian Right</div>
+                    <div class="quadrant-leaders"></div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn" id="startGame" disabled>Start Game</button>
+                <button class="btn btn-secondary" id="randomDeck">Random Deck</button>
+                <button class="btn btn-secondary" id="balancedDeck">Balanced Deck</button>
+            </div>
+        </div>
+
+        <div id="gameArea" class="game-area" style="display: none;">
+            <div class="player-area">
+                <h3>Your Leaders</h3>
+                <div id="playerCards"></div>
+            </div>
+
+            <div class="battle-area">
+                <h3>Battle Arena</h3>
+                <div id="battleCards">
+                    <p>Select a leader to battle!</p>
+                </div>
+                <div class="battle-controls">
+                    <button class="btn" id="battleBtn" disabled>Battle!</button>
+                    <button class="btn btn-secondary" id="useAbility" disabled>Use Special Ability</button>
+                </div>
+                <div id="battleResult"></div>
+            </div>
+
+            <div class="ai-area">
+                <h3>AI Leaders</h3>
+                <div id="aiCards"></div>
+            </div>
+        </div>
+
+        <div id="turnIndicator" class="turn-indicator" style="display: none;">
+            Your Turn - Select a Leader to Battle!
+        </div>
+    </div>
+
+    <script>
+        // Game data and logic
+        const leaders = [
+            // Current Leaders - Authoritarian Left
+            {name: "Xi Jinping", country: "China", quadrant: "auth-left", stats: {diplomacy: 8, military: 7, economics: 9, influence: 7, innovation: 8, stability: 9}, ability: "Belt & Road Initiative - +2 Economics per alliance", era: "current"},
+            {name: "Kim Jong Un", country: "North Korea", quadrant: "auth-left", stats: {diplomacy: 3, military: 8, economics: 2, influence: 6, innovation: 4, stability: 8}, ability: "Nuclear Deterrent - Immune to military attacks", era: "current"},
+            {name: "Miguel Díaz-Canel", country: "Cuba", quadrant: "auth-left", stats: {diplomacy: 5, military: 4, economics: 3, influence: 5, innovation: 3, stability: 7}, ability: "Revolutionary Legacy - +3 Influence with Auth-Left", era: "current"},
+            
+            // Current Leaders - Authoritarian Right  
+            {name: "Vladimir Putin", country: "Russia", quadrant: "auth-right", stats: {diplomacy: 6, military: 9, economics: 7, influence: 8, innovation: 5, stability: 8}, ability: "Energy Weapon - -3 Economics to European leaders", era: "current"},
+            {name: "Mohammed bin Salman", country: "Saudi Arabia", quadrant: "auth-right", stats: {diplomacy: 6, military: 7, economics: 9, influence: 6, innovation: 7, stability: 7}, ability: "Vision 2030 - +4 Innovation & Economics (3 turns)", era: "current"},
+            {name: "Recep Erdoğan", country: "Turkey", quadrant: "auth-right", stats: {diplomacy: 7, military: 8, economics: 6, influence: 7, innovation: 5, stability: 6}, ability: "Bridge Builder - Ally with any quadrant", era: "current"},
+            
+            // Current Leaders - Libertarian Left
+            {name: "Justin Trudeau", country: "Canada", quadrant: "lib-left", stats: {diplomacy: 8, military: 4, economics: 7, influence: 7, innovation: 6, stability: 6}, ability: "Progressive Alliance - +2 Diplomacy with Lib-Left", era: "current"},
+            {name: "Olaf Scholz", country: "Germany", quadrant: "lib-left", stats: {diplomacy: 7, military: 5, economics: 8, influence: 6, innovation: 7, stability: 7}, ability: "Industrial Powerhouse - +3 Economics", era: "current"},
+            {name: "Gabriel Boric", country: "Chile", quadrant: "lib-left", stats: {diplomacy: 6, military: 3, economics: 5, influence: 7, innovation: 7, stability: 5}, ability: "Youth Movement - +2 Innovation", era: "current"},
+            
+            // Current Leaders - Libertarian Right
+            {name: "Donald Trump", country: "USA", quadrant: "lib-right", stats: {diplomacy: 4, military: 8, economics: 7, influence: 9, innovation: 5, stability: 5}, ability: "America First - +3 Economics & Military", era: "current"},
+            {name: "Emmanuel Macron", country: "France", quadrant: "lib-right", stats: {diplomacy: 8, military: 6, economics: 7, influence: 7, innovation: 7, stability: 6}, ability: "European Leadership - Form EU coalitions", era: "current"},
+            {name: "Volodymyr Zelenskyy", country: "Ukraine", quadrant: "lib-right", stats: {diplomacy: 9, military: 8, economics: 4, influence: 9, innovation: 6, stability: 7}, ability: "Wartime Leadership - +3 Military & Influence", era: "current"},
+            
+            // Historical Leaders - Authoritarian Left
+            {name: "Mao Zedong", country: "China", quadrant: "auth-left", stats: {diplomacy: 5, military: 8, economics: 4, influence: 9, innovation: 6, stability: 6}, ability: "Cultural Revolution - Reset all opponents' Influence to 1", era: "historical"},
+            {name: "Joseph Stalin", country: "Soviet Union", quadrant: "auth-left", stats: {diplomacy: 6, military: 9, economics: 7, influence: 7, innovation: 7, stability: 8}, ability: "Iron Curtain - +4 Military & Stability", era: "historical"},
+            {name: "Fidel Castro", country: "Cuba", quadrant: "auth-left", stats: {diplomacy: 6, military: 7, economics: 4, influence: 8, innovation: 5, stability: 8}, ability: "Revolutionary Export - Convert others to Auth-Left", era: "historical"},
+            
+            // Historical Leaders - Authoritarian Right
+            {name: "Augusto Pinochet", country: "Chile", quadrant: "auth-right", stats: {diplomacy: 4, military: 8, economics: 7, influence: 4, innovation: 5, stability: 7}, ability: "Economic Liberalization - +3 Economics & Innovation", era: "historical"},
+            {name: "Saddam Hussein", country: "Iraq", quadrant: "auth-right", stats: {diplomacy: 4, military: 8, economics: 6, influence: 5, innovation: 4, stability: 6}, ability: "Oil Power - +4 Economics & Military", era: "historical"},
+            
+            // Historical Leaders - Libertarian Left
+            {name: "Nelson Mandela", country: "South Africa", quadrant: "lib-left", stats: {diplomacy: 10, military: 4, economics: 6, influence: 10, innovation: 7, stability: 8}, ability: "Moral Authority - End any conflict", era: "historical"},
+            {name: "Salvador Allende", country: "Chile", quadrant: "lib-left", stats: {diplomacy: 6, military: 3, economics: 6, influence: 7, innovation: 6, stability: 4}, ability: "Democratic Socialism - +3 Economics & Innovation", era: "historical"},
+            
+            // Historical Leaders - Libertarian Right
+            {name: "Ronald Reagan", country: "USA", quadrant: "lib-right", stats: {diplomacy: 7, military: 8, economics: 8, influence: 9, innovation: 6, stability: 7}, ability: "Reaganomics - +3 Economics & Innovation", era: "historical"},
+            {name: "Margaret Thatcher", country: "UK", quadrant: "lib-right", stats: {diplomacy: 6, military: 7, economics: 9, influence: 8, innovation: 7, stability: 8}, ability: "Iron Lady - Immune to intimidation", era: "historical"},
+            {name: "John F. Kennedy", country: "USA", quadrant: "lib-right", stats: {diplomacy: 9, military: 7, economics: 7, influence: 9, innovation: 8, stability: 6}, ability: "New Frontier - +3 Innovation & Influence", era: "historical"}
+        ];
+
+        let gameState = {
+            phase: 'selection',
+            playerDeck: [],
+            aiDeck: [],
+            selectedLeaders: [],
+            playerScore: 0,
+            aiScore: 0,
+            currentRound: 1,
+            selectedPlayerCard: null,
+            selectedAICard: null,
+            battleResult: null
+        };
+
+        function initGame() {
+            displayLeaderSelection();
+            updateUI();
+        }
+
+        function displayLeaderSelection() {
+            const quadrants = {
+                'auth-left': document.querySelector('#authLeftQuadrant .quadrant-leaders'),
+                'auth-right': document.querySelector('#authRightQuadrant .quadrant-leaders'),
+                'lib-left': document.querySelector('#libLeftQuadrant .quadrant-leaders'),
+                'lib-right': document.querySelector('#libRightQuadrant .quadrant-leaders')
+            };
+
+            // Clear all quadrants
+            Object.values(quadrants).forEach(container => container.innerHTML = '');
+
+            leaders.forEach(leader => {
+                const card = createCompassLeaderCard(leader);
+                card.addEventListener('click', () => selectLeaderForDeck(leader, card));
+                quadrants[leader.quadrant].appendChild(card);
+            });
+        }
+
+        function createCompassLeaderCard(leader) {
+            const card = document.createElement('div');
+            card.className = 'leader-card compass-card selectable';
+            
+            const totalStats = Object.values(leader.stats).reduce((sum, stat) => sum + stat, 0);
+            
+            card.innerHTML = `
+                <div class="leader-name">${leader.name}</div>
+                <div class="leader-country">${leader.country} ${leader.era === 'historical' ? '†' : ''}</div>
+                <div class="stats-grid">
+                    <div class="stat"><span>DIP:</span><span>${leader.stats.diplomacy}</span></div>
+                    <div class="stat"><span>MIL:</span><span>${leader.stats.military}</span></div>
+                    <div class="stat"><span>ECO:</span><span>${leader.stats.economics}</span></div>
+                    <div class="stat"><span>INF:</span><span>${leader.stats.influence}</span></div>
+                    <div class="stat"><span>INN:</span><span>${leader.stats.innovation}</span></div>
+                    <div class="stat"><span>STA:</span><span>${leader.stats.stability}</span></div>
+                </div>
+                <div class="special-ability" style="font-size: 0.75rem;">${leader.ability.substring(0, 60)}${leader.ability.length > 60 ? '...' : ''}</div>
+                <div style="margin-top: 8px; font-weight: bold; color: #4ecdc4; font-size: 0.9rem;">Power: ${totalStats}</div>
+            `;
+            
+            return card;
+        }
+
+        function createLeaderCard(leader, selectable = false) {
+            const card = document.createElement('div');
+            card.className = `leader-card ${selectable ? 'selectable' : ''}`;
+            
+            const totalStats = Object.values(leader.stats).reduce((sum, stat) => sum + stat, 0);
+            
+            card.innerHTML = `
+                <div class="leader-name">${leader.name}</div>
+                <div class="leader-country">${leader.country}</div>
+                <div class="leader-quadrant ${leader.quadrant}">${getQuadrantName(leader.quadrant)}</div>
+                <div class="stats-grid">
+                    <div class="stat"><span>Diplomacy:</span><span>${leader.stats.diplomacy}</span></div>
+                    <div class="stat"><span>Military:</span><span>${leader.stats.military}</span></div>
+                    <div class="stat"><span>Economics:</span><span>${leader.stats.economics}</span></div>
+                    <div class="stat"><span>Influence:</span><span>${leader.stats.influence}</span></div>
+                    <div class="stat"><span>Innovation:</span><span>${leader.stats.innovation}</span></div>
+                    <div class="stat"><span>Stability:</span><span>${leader.stats.stability}</span></div>
+                </div>
+                <div class="special-ability">${leader.ability}</div>
+                <div style="margin-top: 10px; font-weight: bold; color: #4ecdc4;">Total Power: ${totalStats}</div>
+            `;
+            
+            return card;
+        }
+
+        function getQuadrantName(quadrant) {
+            const names = {
+                'auth-left': 'Authoritarian Left',
+                'auth-right': 'Authoritarian Right', 
+                'lib-left': 'Libertarian Left',
+                'lib-right': 'Libertarian Right'
+            };
+            return names[quadrant];
+        }
+
+        function selectLeaderForDeck(leader, cardElement) {
+            if (gameState.selectedLeaders.includes(leader)) {
+                // Deselect
+                gameState.selectedLeaders = gameState.selectedLeaders.filter(l => l !== leader);
+                cardElement.classList.remove('selected');
+            } else if (gameState.selectedLeaders.length < 5) {
+                // Select
+                gameState.selectedLeaders.push(leader);
+                cardElement.classList.add('selected');
+            }
+            
+            updateSelectionCounter();
+            document.getElementById('startGame').disabled = gameState.selectedLeaders.length !== 5;
+        }
+
+        function updateSelectionCounter() {
+            document.getElementById('selectionCount').textContent = gameState.selectedLeaders.length;
+            
+            const counter = document.querySelector('.selection-counter');
+            if (gameState.selectedLeaders.length === 5) {
+                counter.style.color = '#10b981';
+                counter.style.fontWeight = 'bold';
+            } else {
+                counter.style.color = '#4ecdc4';
+                counter.style.fontWeight = 'normal';
+            }
+        }
+
+        function randomDeck() {
+            clearAllSelections();
+            
+            const shuffled = [...leaders].sort(() => 0.5 - Math.random());
+            gameState.selectedLeaders = shuffled.slice(0, 5);
+            
+            updateSelectionUI();
+        }
+
+        function balancedDeck() {
+            clearAllSelections();
+            
+            // Try to get at least one from each quadrant
+            const byQuadrant = {
+                'auth-left': leaders.filter(l => l.quadrant === 'auth-left'),
+                'auth-right': leaders.filter(l => l.quadrant === 'auth-right'),
+                'lib-left': leaders.filter(l => l.quadrant === 'lib-left'),
+                'lib-right': leaders.filter(l => l.quadrant === 'lib-right')
+            };
+            
+            gameState.selectedLeaders = [];
+            
+            // Pick one from each quadrant
+            Object.values(byQuadrant).forEach(quadrantLeaders => {
+                if (quadrantLeaders.length > 0 && gameState.selectedLeaders.length < 4) {
+                    const randomLeader = quadrantLeaders[Math.floor(Math.random() * quadrantLeaders.length)];
+                    gameState.selectedLeaders.push(randomLeader);
+                }
+            });
+            
+            // Fill remaining slot with any leader
+            if (gameState.selectedLeaders.length < 5) {
+                const remaining = leaders.filter(l => !gameState.selectedLeaders.includes(l));
+                gameState.selectedLeaders.push(remaining[Math.floor(Math.random() * remaining.length)]);
+            }
+            
+            updateSelectionUI();
+        }
+
+        function clearAllSelections() {
+            gameState.selectedLeaders = [];
+            document.querySelectorAll('.leader-card.selected').forEach(card => {
+                card.classList.remove('selected');
+            });
+        }
+
+        function updateSelectionUI() {
+            // Update visual selection
+            document.querySelectorAll('.compass-card').forEach(card => {
+                const leaderName = card.querySelector('.leader-name').textContent;
+                if (gameState.selectedLeaders.some(l => l.name === leaderName)) {
+                    card.classList.add('selected');
+                }
+            });
+            
+            updateSelectionCounter();
+            document.getElementById('startGame').disabled = gameState.selectedLeaders.length !== 5;
+        }
+
+        function startGame() {
+            gameState.phase = 'playing';
+            gameState.playerDeck = [...gameState.selectedLeaders];
+            
+            // AI gets random deck
+            const availableLeaders = leaders.filter(l => !gameState.selectedLeaders.includes(l));
+            gameState.aiDeck = availableLeaders.sort(() => 0.5 - Math.random()).slice(0, 5);
+            
+            document.getElementById('deckSelection').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'grid';
+            document.getElementById('turnIndicator').style.display = 'block';
+            document.getElementById('gamePhase').textContent = 'Battle Phase';
+            
+            displayPlayerCards();
+            displayAICards();
+            updateUI();
+        }
+
+        function displayPlayerCards() {
+            const container = document.getElementById('playerCards');
+            container.innerHTML = '';
+            
+            gameState.playerDeck.forEach(leader => {
+                const card = createLeaderCard(leader);
+                card.addEventListener('click', () => selectPlayerCard(leader, card));
+                container.appendChild(card);
+            });
+        }
+
+        function displayAICards() {
+            const container = document.getElementById('aiCards');
+            container.innerHTML = '';
+            
+            gameState.aiDeck.forEach(leader => {
+                const card = createLeaderCard(leader);
+                card.classList.add('ai-card');
+                container.appendChild(card);
+            });
+        }
+
+        function selectPlayerCard(leader, cardElement) {
+            // Clear previous selection
+            document.querySelectorAll('#playerCards .leader-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            gameState.selectedPlayerCard = leader;
+            cardElement.classList.add('selected');
+            
+            document.getElementById('battleBtn').disabled = false;
+            document.getElementById('useAbility').disabled = false;
+            
+            updateBattleArea();
+        }
+
+        function updateBattleArea() {
+            const battleCards = document.getElementById('battleCards');
+            if (gameState.selectedPlayerCard) {
+                battleCards.innerHTML = `
+                    <div style="display: flex; justify-content: space-around; align-items: center;">
+                        <div>
+                            <h4>Your Champion</h4>
+                            ${createLeaderCard(gameState.selectedPlayerCard).outerHTML}
+                        </div>
+                        <div style="font-size: 2rem;">VS</div>
+                        <div>
+                            <h4>AI Champion</h4>
+                            <div class="loading">AI is selecting...</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function battle() {
+            if (!gameState.selectedPlayerCard) return;
+            
+            // AI selects random card
+            const aiCard = gameState.aiDeck[Math.floor(Math.random() * gameState.aiDeck.length)];
+            gameState.selectedAICard = aiCard;
+            
+            // Update battle area to show both cards
+            const battleCards = document.getElementById('battleCards');
+            battleCards.innerHTML = `
+                <div style="display: flex; justify-content: space-around; align-items: center;">
+                    <div>
+                        <h4>Your Champion</h4>
+                        ${createLeaderCard(gameState.selectedPlayerCard).outerHTML}
+                    </div>
+                    <div style="font-size: 2rem;">VS</div>
+                    <div>
+                        <h4>AI Champion</h4>
+                        ${createLeaderCard(gameState.selectedAICard).outerHTML}
+                    </div>
+                </div>
+            `;
+            
+            // Calculate battle result
+            const playerPower = calculatePower(gameState.selectedPlayerCard);
+            const aiPower = calculatePower(gameState.selectedAICard);
+            
+            let result = '';
+            let resultClass = '';
+            
+            if (playerPower > aiPower) {
+                gameState.playerScore++;
+                result = `Victory! Your ${gameState.selectedPlayerCard.name} (${playerPower}) defeats AI's ${gameState.selectedAICard.name} (${aiPower})`;
+                resultClass = 'victory';
+                
+                // Remove AI card
+                gameState.aiDeck = gameState.aiDeck.filter(l => l !== gameState.selectedAICard);
+            } else if (aiPower > playerPower) {
+                gameState.aiScore++;
+                result = `Defeat! AI's ${gameState.selectedAICard.name} (${aiPower}) defeats your ${gameState.selectedPlayerCard.name} (${playerPower})`;
+                resultClass = 'defeat';
+                
+                // Remove player card
+                gameState.playerDeck = gameState.playerDeck.filter(l => l !== gameState.selectedPlayerCard);
+            } else {
+                result = `Draw! Both leaders have equal power (${playerPower})`;
+                resultClass = 'victory';
+            }
+            
+            document.getElementById('battleResult').innerHTML = `<div class="battle-result ${resultClass}">${result}</div>`;
+            
+            // Check for game end
+            if (gameState.playerDeck.length === 0 || gameState.aiDeck.length === 0) {
+                endGame();
+            } else {
+                gameState.currentRound++;
+                setTimeout(() => {
+                    resetRound();
+                }, 3000);
+            }
+            
+            document.getElementById('battleBtn').disabled = true;
+            document.getElementById('useAbility').disabled = true;
+        }
+
+        function calculatePower(leader) {
+            return Object.values(leader.stats).reduce((sum, stat) => sum + stat, 0);
+        }
+
+        function useSpecialAbility() {
+            if (!gameState.selectedPlayerCard) return;
+            
+            const result = `${gameState.selectedPlayerCard.name} uses: ${gameState.selectedPlayerCard.ability}`;
+            document.getElementById('battleResult').innerHTML = `<div class="battle-result victory">${result}</div>`;
+            
+            // For demo, just add bonus power
+            gameState.selectedPlayerCard.bonusPower = 10;
+            document.getElementById('useAbility').disabled = true;
+        }
+
+        function resetRound() {
+            gameState.selectedPlayerCard = null;
+            gameState.selectedAICard = null;
+            document.getElementById('battleResult').innerHTML = '';
+            document.getElementById('battleCards').innerHTML = '<p>Select a leader to battle!</p>';
+            document.getElementById('battleBtn').disabled = true;
+            document.getElementById('useAbility').disabled = true;
+            
+            displayPlayerCards();
+            displayAICards();
+            updateUI();
+        }
+
+        function endGame() {
+            let message = '';
+            if (gameState.playerScore > gameState.aiScore) {
+                message = '🎉 Congratulations! You dominated the world stage!';
+            } else if (gameState.aiScore > gameState.playerScore) {
+                message = '😢 The AI has outmaneuvered you this time!';
+            } else {
+                message = '🤝 A diplomatic tie - both sides showed great leadership!';
+            }
+            
+            document.getElementById('gamePhase').textContent = 'Game Over';
+            document.getElementById('battleCards').innerHTML = `
+                <h2>${message}</h2>
+                <p>Final Score - You: ${gameState.playerScore}, AI: ${gameState.aiScore}</p>
+                <button class="btn" onclick="location.reload()">Play Again</button>
+            `;
+        }
+
+        function updateUI() {
+            document.getElementById('currentRound').textContent = gameState.currentRound;
+            document.getElementById('playerScore').textContent = gameState.playerScore;
+            document.getElementById('aiScore').textContent = gameState.aiScore;
+            document.getElementById('cardsLeft').textContent = gameState.playerDeck.length;
+        }
+
+        // Event listeners
+        document.getElementById('startGame').addEventListener('click', startGame);
+        document.getElementById('randomDeck').addEventListener('click', randomDeck);
+        document.getElementById('balancedDeck').addEventListener('click', balancedDeck);
+        document.getElementById('battleBtn').addEventListener('click', battle);
+        document.getElementById('useAbility').addEventListener('click', useSpecialAbility);
+
+        // Initialize the game
+        initGame();
+    </script>
+</body>
+</html>
